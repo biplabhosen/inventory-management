@@ -1,59 +1,155 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Inventory Management System (Laravel 12)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Production-ready Inventory Management + double-entry accounting system built with Laravel 12, PHP 8.2+, MySQL, Blade, and Bootstrap 5.
 
-## About Laravel
+## Project Overview
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+This system provides:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Product management with opening stock capitalization.
+- Sale recording with discount, VAT, partial payment, and due tracking.
+- Automated double-entry journal posting via `AccountingService`.
+- Financial-safe stock and sale posting through DB transactions in `SaleService`.
+- Dashboard KPIs, journal ledger, and financial report by date range.
+- Railway-ready deployment config (`railway.json`, `.env.example`).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Accounting Explanation
 
-## Learning Laravel
+### 1) Opening Stock Posting
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+When a product is created, opening stock value is:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+`opening_inventory_value = purchase_price x opening_stock`
 
-## Laravel Sponsors
+Journal:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- Dr Inventory
+- Cr Capital
 
-### Premium Partners
+### 2) Sale Posting
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+For each sale:
 
-## Contributing
+- `subtotal = quantity x unit_price`
+- `net_sale = subtotal - discount`
+- `vat_amount = net_sale x vat_percent / 100`
+- `total_receivable = net_sale + vat_amount`
+- `due_amount = total_receivable - paid_amount`
+- `cogs = quantity x purchase_price`
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Journal entries:
 
-## Code of Conduct
+- Revenue entry: Dr Accounts Receivable (total_receivable), Cr Sales Revenue (net_sale), Cr VAT Payable (vat_amount)
+- COGS entry: Dr Cost of Goods Sold (cogs), Cr Inventory (cogs)
+- Payment entry: Dr Cash (paid_amount), Cr Accounts Receivable (paid_amount)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+All entries are generated automatically by `app/Services/AccountingService.php`.
 
-## Security Vulnerabilities
+## Journal Entry Explanation (Given Scenario)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Seeded scenario:
 
-## License
+- Product: purchase 100 TK, sell 200 TK, opening stock 50
+- Sale: qty 10, discount 50 TK, VAT 5%, paid 1000 TK
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Computed values:
+
+- Opening inventory value: `100 x 50 = 5000`
+- Subtotal: `10 x 200 = 2000`
+- Net sale: `2000 - 50 = 1950`
+- VAT: `1950 x 5% = 97.50`
+- Total receivable: `1950 + 97.50 = 2047.50`
+- Due: `2047.50 - 1000 = 1047.50`
+- COGS: `10 x 100 = 1000`
+
+## Tech and Architecture
+
+- Laravel 12 MVC structure
+- Service layer with `SaleService` for stock validation, calculation, and atomic sale posting
+- Service layer with `AccountingService` for journal posting rules
+- MySQL-only runtime defaults
+- DB transaction usage in sale flow
+
+## Setup Instructions
+
+1. Install dependencies:
+
+```bash
+composer install
+```
+
+2. Create environment file:
+
+```bash
+cp .env.example .env
+```
+
+3. Set MySQL credentials in `.env`.
+
+4. Generate app key:
+
+```bash
+php artisan key:generate
+```
+
+5. Run migrations and seed data:
+
+```bash
+php artisan migrate --seed
+```
+
+6. Start locally:
+
+```bash
+php artisan serve
+```
+
+## Financial Report Endpoint
+
+`GET /report?from=YYYY-MM-DD&to=YYYY-MM-DD`
+
+Shows:
+
+- Total Sales (`SUM(sales.total_amount)`)
+- Total Expense (`SUM(journal_entries.debit where account = COGS)`)
+- Total Profit (`Sales - Expense`)
+- Total Due (`SUM(sales.due_amount)`)
+
+## Railway Deployment Steps
+
+1. Push this project to GitHub.
+2. Create a new Railway project from the repository.
+3. Add a Railway MySQL service.
+4. Ensure app service variables are set (see next section).
+5. Deploy with `railway.json` settings (automatic migrations on startup, Laravel cache warmup, and Railway port binding).
+
+No SQLite is used in runtime defaults.
+
+## Environment Variable Setup
+
+Important variables:
+
+- `APP_ENV=production`
+- `APP_DEBUG=false`
+- `DB_CONNECTION=mysql`
+- `DB_HOST=${MYSQLHOST}`
+- `DB_PORT=${MYSQLPORT}`
+- `DB_DATABASE=${MYSQLDATABASE}`
+- `DB_USERNAME=${MYSQLUSER}`
+- `DB_PASSWORD=${MYSQLPASSWORD}`
+- `APP_KEY` (must be generated and set)
+- `DEFAULT_VAT_PERCENT=5` (optional override)
+
+Use the provided `.env.example` as the baseline.
+
+## Demo Credentials
+
+Seeded admin user:
+
+- Email: `admin@inventory.test`
+- Password: `admin12345`
+
+Seeded data:
+
+- Demo product with opening stock journal
+- Sample sale with full accounting journal flow
