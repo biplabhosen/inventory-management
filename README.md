@@ -110,10 +110,10 @@ php artisan serve
 
 Shows:
 
-- Total Sales (`SUM(sales.total_amount)`)
-- Total Expense (`SUM(journal_entries.debit where account = COGS)`)
-- Total Profit (`Sales - Expense`)
-- Total Due (`SUM(sales.due_amount)`)
+- Net Sales (`SUM(journal_entries.credit where account = Sales Revenue)`)
+- Total Expense (`SUM(journal_entries.debit where account = Cost of Goods Sold)`)
+- Total Profit (`Net Sales - Total Expense`)
+- Total Due (`Accounts Receivable balance as of report end date`)
 
 ## Railway Deployment Steps
 

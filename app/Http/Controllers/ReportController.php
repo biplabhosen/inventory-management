@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\JournalEntry;
-use App\Models\Sale;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,21 +22,38 @@ class ReportController extends Controller
         $from = Carbon::parse($validated['from'] ?? now()->startOfMonth()->toDateString())->toDateString();
         $to = Carbon::parse($validated['to'] ?? now()->toDateString())->toDateString();
 
-        $salesQuery = Sale::query()
-            ->whereBetween('date', [$from, $to]);
+        $salesRevenueAccount = (string) config('accounting.accounts.sales_revenue');
+        $cogsAccount = (string) config('accounting.accounts.cost_of_goods_sold');
+        $accountsReceivableAccount = (string) config('accounting.accounts.accounts_receivable');
 
-        $totalSales = (float) (clone $salesQuery)->sum('total_amount');
-        $totalDue = (float) (clone $salesQuery)->sum('due_amount');
+        $netSales = (float) JournalEntry::query()
+            ->where('account_name', $salesRevenueAccount)
+            ->whereBetween('date', [$from, $to])
+            ->sum('credit');
+
         $totalExpense = (float) JournalEntry::query()
-            ->where('account_name', config('accounting.accounts.cost_of_goods_sold'))
+            ->where('account_name', $cogsAccount)
             ->whereBetween('date', [$from, $to])
             ->sum('debit');
-        $totalProfit = round($totalSales - $totalExpense, 2);
+
+        // Due is the closing Accounts Receivable balance as of the report end date.
+        $accountsReceivableDebit = (float) JournalEntry::query()
+            ->where('account_name', $accountsReceivableAccount)
+            ->whereDate('date', '<=', $to)
+            ->sum('debit');
+
+        $accountsReceivableCredit = (float) JournalEntry::query()
+            ->where('account_name', $accountsReceivableAccount)
+            ->whereDate('date', '<=', $to)
+            ->sum('credit');
+
+        $totalDue = round($accountsReceivableDebit - $accountsReceivableCredit, 2);
+        $totalProfit = round($netSales - $totalExpense, 2);
 
         return view('reports.index', compact(
             'from',
             'to',
-            'totalSales',
+            'netSales',
             'totalExpense',
             'totalProfit',
             'totalDue',

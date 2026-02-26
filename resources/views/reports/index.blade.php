@@ -29,8 +29,8 @@
         <div class="col-md-6 col-xl-3">
             <div class="card metric-card h-100">
                 <div class="card-body">
-                    <div class="metric-label">Total Sales</div>
-                    <div class="h5 mb-0">{{ number_format($totalSales, 2) }} TK</div>
+                    <div class="metric-label">Net Sales (Excl. VAT)</div>
+                    <div class="h5 mb-0">{{ number_format($netSales, 2) }} TK</div>
                 </div>
             </div>
         </div>
@@ -55,8 +55,8 @@
         <div class="col-md-6 col-xl-3">
             <div class="card metric-card h-100">
                 <div class="card-body">
-                    <div class="metric-label">Total Due</div>
-                    <div class="h5 mb-0">{{ number_format($totalDue, 2) }} TK</div>
+                    <div class="metric-label">Total Due (A/R Balance)</div>
+                    <div class="h5 mb-0 {{ $totalDue >= 0 ? '' : 'text-danger' }}">{{ number_format($totalDue, 2) }} TK</div>
                 </div>
             </div>
         </div>
@@ -65,7 +65,7 @@
     <div class="card mt-4">
         <div class="card-body">
             <div><strong>Period:</strong> {{ $from }} to {{ $to }}</div>
-            <div class="text-muted small mt-2">Formula: Profit = Total Sales - Total Expense (COGS)</div>
+            <div class="text-muted small mt-2">Formula: Profit = Net Sales (Sales Revenue only) - COGS. VAT Payable is excluded from revenue and profit.</div>
         </div>
     </div>
 @endsection
