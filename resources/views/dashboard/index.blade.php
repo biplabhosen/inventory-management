@@ -12,15 +12,15 @@
         <div class="col-md-6 col-xl-2">
             <div class="card metric-card h-100">
                 <div class="card-body">
-                    <div class="metric-label">Total Sales</div>
-                    <div class="h5 mb-0">{{ number_format($totalSales, 2) }} TK</div>
+                    <div class="metric-label">Net Sales (Excl. VAT)</div>
+                    <div class="h5 mb-0">{{ number_format($netSales, 2) }} TK</div>
                 </div>
             </div>
         </div>
         <div class="col-md-6 col-xl-2">
             <div class="card metric-card h-100">
                 <div class="card-body">
-                    <div class="metric-label">Total Expense</div>
+                    <div class="metric-label">Total Expense (COGS)</div>
                     <div class="h5 mb-0">{{ number_format($totalExpense, 2) }} TK</div>
                 </div>
             </div>
@@ -28,8 +28,8 @@
         <div class="col-md-6 col-xl-2">
             <div class="card metric-card h-100">
                 <div class="card-body">
-                    <div class="metric-label">Total Due</div>
-                    <div class="h5 mb-0">{{ number_format($totalDue, 2) }} TK</div>
+                    <div class="metric-label">Total Due (A/R Balance)</div>
+                    <div class="h5 mb-0 {{ $totalDue >= 0 ? '' : 'text-danger' }}">{{ number_format($totalDue, 2) }} TK</div>
                 </div>
             </div>
         </div>
@@ -44,7 +44,7 @@
         <div class="col-md-6 col-xl-2">
             <div class="card metric-card h-100">
                 <div class="card-body">
-                    <div class="metric-label">Profit</div>
+                    <div class="metric-label">Gross Profit</div>
                     <div class="h5 mb-0 {{ $profit >= 0 ? 'text-success' : 'text-danger' }}">
                         {{ number_format($profit, 2) }} TK
                     </div>
@@ -52,6 +52,7 @@
             </div>
         </div>
     </div>
+    <p class="text-muted small">Gross Profit = Net Sales (Sales Revenue only) - COGS. VAT is excluded from profit.</p>
 
     <div class="card">
         <div class="card-header bg-white">
